@@ -165,7 +165,16 @@ func ParseArticle(link string) ([]ArticleFull, error) {
    
 
 func main() {
-	date := "2023/03/12/"
+	start_date := "2024/01/01"
+	FastForward(start_date)
+	//ParseAllByDate(start_date)
+}
+
+
+// Get all news list and articles parsed and saved by date
+func ParseAllByDate(date string)  {
+	date = date + "/"
+	log.Println("Parse all news from medusa by date: ", date)
 	news, err := ParseMedusaImportantNewsByDate(date)
 	if err != nil {
 		log.Fatal(err)
@@ -176,7 +185,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	directory,err := createDirectory(f_date)
+	data_dir, err := createDirectory("medusa_dump")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	directory,err := createDirectory(data_dir + "/" + f_date)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -206,8 +220,6 @@ func main() {
 		}
 	}
 }
-
-
 
 
 func formatDate(dateString string) (string,error) {
@@ -281,4 +293,30 @@ func storeNewsList(article []ArticleShort, filename string) error {
     }
 
     return nil
+}
+
+
+// get and saves all news from start date till now
+func FastForward(start_date string)  {
+	 // Set the starting date
+	// startDateStr := "2022/02/24/"
+	 startDateStr := start_date
+	 startDate, err := time.Parse("2006/01/02", startDateStr)
+	 if err != nil {
+	  fmt.Println("Invalid start date format:", err)
+	  return
+	 }
+	
+	 // Get the current date
+	 currentDate := time.Now()
+	
+	 // Iterate over the range of dates
+	 for date := startDate; date.Before(currentDate); date = date.AddDate(0, 0, 1) {
+	  // Format the date to match the expected format for the Medusa site
+	  dateStr := date.Format("2006/01/02")
+	
+	  // Your parsing logic goes here
+	  // Call the function or perform the action to parse the news for the given date
+	  ParseAllByDate(dateStr)
+	 }
 }
