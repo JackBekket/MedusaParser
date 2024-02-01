@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -21,6 +22,12 @@ type ArticleShort struct {
 	Title       string
 	Link        string
    }
+
+   type ArticleFull struct {
+	Title       string
+	Link        string
+	Content		string
+   }   
 
    
 func ParseMedusaImportantNews() ([]ArticleShort, error) {
@@ -101,10 +108,59 @@ func ParseMedusaImportantNews() ([]ArticleShort, error) {
    
 	return news, nil
    }
+
+
+
+func ParseArticle(link string) ([]ArticleFull, error) {
+		// Make an HTTP GET request to the Medusa news site
+		//https://meduza.io/news/2023/03/12/rossiyskie-vlasti-potrebovali-ogranichit-v-roditelskih-pravah-ottsa-shkolnitsy-narisovavshey-antivoennyy-risunok-delo-rassmotryat-15-marta
+		resp, err := http.Get(link)
+		if err != nil {
+		 return nil, err
+		}
+		defer resp.Body.Close()
+	   
+		// Parse the HTML document
+		doc, err := goquery.NewDocumentFromReader(resp.Body)
+		if err != nil {
+		 return nil, err
+		}
+	   
+		// Find the div block with the most important news articles
+		//div := doc.Find("h1[data-testid=simple-title]")
+	   
+		// Extract the news from the div block
+		var news []ArticleFull
+		doc.Find("h1[data-testid=simple-title]").Each(func(i int, s *goquery.Selection) {
+		 // Extract the title, description, and link of each article
+		 //title := s.Find("a").Text()
+		 title := s.Text()
+		 // link, _ := s.Find("a").Attr("href")
+	   
+		 // Create a new article object with the extracted data
+		 article := ArticleFull{
+		  Title:       title,
+		  Link:        link,
+		 }
+
+		// Find the div block with additional content
+        doc.Find("div.GeneralMaterial-module-body").Each(func(i int, s *goquery.Selection) {
+            content := strings.TrimSpace(s.Text())
+            article.Content = content
+        })
+	   
+		 // Add the article to the articles slice
+		 news = append(news, article)
+		})
+
+		
+	   
+		return news, nil
+}
    
 
 func main() {
-	news, err := ParseMedusaImportantNewsByDate("2024/02/01")
+	news, err := ParseMedusaImportantNewsByDate("2023/03/12/")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -114,6 +170,17 @@ func main() {
 		fmt.Println("Title:", n.Title)
 		//fmt.Println("Description:", n.Description)
 		fmt.Println("Link: ", n.Link)
+		if (n.Link != "") {
+			articles,err := ParseArticle(n.Link)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			for _,a := range articles {
+				fmt.Println("TitleFull: ", a.Title)
+				fmt.Println("Full Content: ", a.Content)
+			}
+		}
 	}
 }
 
