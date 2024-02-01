@@ -165,7 +165,7 @@ func ParseArticle(link string) ([]ArticleFull, error) {
    
 
 func main() {
-	start_date := "2024/01/01"
+	start_date := "2022/02/24"
 	FastForward(start_date)
 	//ParseAllByDate(start_date)
 }
