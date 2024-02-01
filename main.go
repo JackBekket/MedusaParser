@@ -3,42 +3,67 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
+/*
 type News struct {
 	Title       string
 	Description string
 	// Add more fields as per your requirements
 }
+*/
 
-func ParseMedusaNews() ([]News, error) {
-	var news []News
 
-	// Fetch the news site's page
-	doc, err := goquery.NewDocument("https://meduza.io/")
+type ArticleShort struct {
+	Title       string
+	Link        string
+   }
+
+   
+func ParseMedusaImportantNews() ([]ArticleShort, error) {
+	// Make an HTTP GET request to the Medusa news site
+	resp, err := http.Get("https://meduza.io/live/2024/02/01/voyna")
 	if err != nil {
-		return nil, err
+	 return nil, err
 	}
-
-	// Parse and extract news articles
-	doc.Find(".news-section").Each(func(i int, s *goquery.Selection) {
-		title := s.Find(".news-text .Title").Text()
-		description := s.Find(".news-text .Description").Text()
-
-		news = append(news, News{
-			Title:       title,
-			Description: description,
-			// Set other field values if required
-		})
+	defer resp.Body.Close()
+   
+	// Parse the HTML document
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+	 return nil, err
+	}
+   
+	// Find the div block with the most important news articles
+	div := doc.Find("div[data-testid=important-lead]")
+   
+	// Extract the news from the div block
+	var news []ArticleShort
+	div.Find("li").Each(func(i int, s *goquery.Selection) {
+	 // Extract the title, description, and link of each article
+	 //title := s.Find("a").Text()
+	 title := s.Text()
+	 link, _ := s.Find("a").Attr("href")
+   
+	 // Create a new article object with the extracted data
+	 article := ArticleShort{
+	  Title:       title,
+	  Link:        link,
+	 }
+   
+	 // Add the article to the articles slice
+	 news = append(news, article)
 	})
-
+   
 	return news, nil
-}
+   }
+   
 
 func main() {
-	news, err := ParseMedusaNews()
+	news, err := ParseMedusaImportantNews()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,8 +71,8 @@ func main() {
 	// Process the collected news
 	for _, n := range news {
 		fmt.Println("Title:", n.Title)
-		fmt.Println("Description:", n.Description)
-		fmt.Println()
+		//fmt.Println("Description:", n.Description)
+		fmt.Println("Link: ", n.Link)
 	}
 }
 
