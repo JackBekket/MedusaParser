@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -21,9 +24,10 @@ type News struct {
 type ArticleShort struct {
 	Title       string
 	Link        string
+	Date		string
    }
 
-   type ArticleFull struct {
+type ArticleFull struct {
 	Title       string
 	Link        string
 	Content		string
@@ -100,6 +104,7 @@ func ParseMedusaImportantNews() ([]ArticleShort, error) {
 	 article := ArticleShort{
 	  Title:       title,
 	  Link:        link,
+	  Date:		   date,
 	 }
    
 	 // Add the article to the articles slice
@@ -160,15 +165,31 @@ func ParseArticle(link string) ([]ArticleFull, error) {
    
 
 func main() {
-	news, err := ParseMedusaImportantNewsByDate("2023/03/12/")
+	date := "2023/03/12/"
+	news, err := ParseMedusaImportantNewsByDate(date)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	f_date, err := formatDate(date)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	directory,err := createDirectory(f_date)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	filename_n := directory + "/" + "news_list.json"
+	storeNewsList(news,filename_n)
+
 	// Process the collected news
 	for _, n := range news {
 		fmt.Println("Title:", n.Title)
-		//fmt.Println("Description:", n.Description)
+
+
+
 		fmt.Println("Link: ", n.Link)
 		if (n.Link != "") {
 			articles,err := ParseArticle(n.Link)
@@ -179,8 +200,85 @@ func main() {
 			for _,a := range articles {
 				fmt.Println("TitleFull: ", a.Title)
 				fmt.Println("Full Content: ", a.Content)
+				filename := directory + "/" + a.Title + ".json"
+				storeArticle(a,filename)
 			}
 		}
 	}
 }
 
+
+
+
+func formatDate(dateString string) (string,error) {
+	//dateString := "2023/03/12"
+	layout := "2006/01/02/"
+   
+	// Parse the input date string into a time.Time value
+	date, err := time.Parse(layout, dateString)
+	if err != nil {
+	 fmt.Println("Error parsing date:", err)
+	 return "",err
+	}
+   
+	// Format the time.Time value to the desired output format
+	formattedDate := date.Format("2006-01-02")
+   
+	fmt.Println("Formatted date:", formattedDate)
+	return formattedDate,nil
+}
+
+func createDirectory(name string) (string,error) {
+	err := os.MkdirAll(name, os.ModePerm)
+    if err != nil {
+        return "", err
+    }
+	return name,nil
+}
+
+
+func storeArticle(article ArticleFull, filename string) error {
+    // Convert the ArticleFull struct to JSON
+    data, err := json.Marshal(article)
+    if err != nil {
+        return err
+    }
+
+    // Create a new file
+    file, err := os.Create(filename)
+    if err != nil {
+        return err
+    }
+    defer file.Close()
+
+    // Write the JSON data to the file
+    _, err = file.Write(data)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func storeNewsList(article []ArticleShort, filename string) error {
+    // Convert the ArticleFull struct to JSON
+    data, err := json.Marshal(article)
+    if err != nil {
+        return err
+    }
+
+    // Create a new file
+    file, err := os.Create(filename)
+    if err != nil {
+        return err
+    }
+    defer file.Close()
+
+    // Write the JSON data to the file
+    _, err = file.Write(data)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
