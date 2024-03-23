@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -251,10 +250,18 @@ func createDirectory(name string) (string,error) {
 
 func storeArticle(article ArticleFull, filename string) error {
     // Convert the ArticleFull struct to JSON
-    data, err := json.Marshal(article)
-    if err != nil {
-        return err
-    }
+    
+	data := article.Title + "\n\n" + article.Content
+	
+
+
+	
+
+	//title := ArticleFull.Title
+
+	//data := ArticleFull.Title + ArticleFull.Content
+
+
 
     // Create a new file
     file, err := os.Create(filename)
@@ -264,7 +271,7 @@ func storeArticle(article ArticleFull, filename string) error {
     defer file.Close()
 
     // Write the JSON data to the file
-    _, err = file.Write(data)
+    _, err = file.WriteString(data)
     if err != nil {
         return err
     }
@@ -274,10 +281,12 @@ func storeArticle(article ArticleFull, filename string) error {
 
 func storeNewsList(article []ArticleShort, filename string) error {
     // Convert the ArticleFull struct to JSON
+	/*
     data, err := json.Marshal(article)
     if err != nil {
         return err
     }
+	*/
 
     // Create a new file
     file, err := os.Create(filename)
@@ -286,10 +295,17 @@ func storeNewsList(article []ArticleShort, filename string) error {
     }
     defer file.Close()
 
-    // Write the JSON data to the file
-    _, err = file.Write(data)
-    if err != nil {
-        return err
+    // Iterate over each ArticleFull in the slice
+    for _, article := range article {
+        // Prepare the string to write, including the title and content.
+        // Feel free to adjust the formatting to meet your needs
+        output := fmt.Sprintf("Title: %s\nContent: %s\n\n", article.Date, article.Title)
+
+        // Write the formatted string to the file
+        if _, err := file.WriteString(output); err != nil {
+            // If an error occurs, return the error
+            return err
+        }
     }
 
     return nil
