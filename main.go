@@ -195,7 +195,7 @@ func ParseAllByDate(date string)  {
 		log.Fatal(err)
 	}
 
-	filename_n := directory + "/" + "news_list.json"
+	filename_n := directory + "/" + "news_list.txt"
 	storeNewsList(news,filename_n)
 
 	// Process the collected news
@@ -214,7 +214,7 @@ func ParseAllByDate(date string)  {
 			for _,a := range articles {
 				fmt.Println("TitleFull: ", a.Title)
 				fmt.Println("Full Content: ", a.Content)
-				filename := directory + "/" + a.Title + ".json"
+				filename := directory + "/" + a.Title + ".txt"
 				storeArticle(a,filename)
 			}
 		}
