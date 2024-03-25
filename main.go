@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -71,50 +72,6 @@ func ParseMedusaImportantNews() ([]ArticleShort, error) {
 	return news, nil
 }
 
-// get all important news by date. date should be in format 2024/02/01 (yyyy/mm/dd)
-/* func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
-	// Make an HTTP GET request to the Medusa news site
-	resp, err := http.Get("https://meduza.io/live/" + date + "/voyna")
-	if err != nil {
-		return nil, err
-	}
-	time.Sleep(5 * time.Second)
-	//defer resp.Body.Close()
-
-	// Parse the HTML document
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	htmlContent, _ := doc.Html()
-
-	// Print the HTML content
-	fmt.Println(htmlContent)
-	// Find the div block with the most important news articles
-	div := doc.Find("[data-testid=important-lead]")
-	fmt.Println(div.Length())
-	// Extract the news from the div block
-	var news []ArticleShort
-	div.Find("li").Each(func(i int, s *goquery.Selection) {
-		// Extract the title, description, and link of each article
-		//title := s.Find("a").Text()
-		title := s.Text()
-		link, _ := s.Find("a").Attr("href")
-
-		// Create a new article object with the extracted data
-		article := ArticleShort{
-			Title: title,
-			Link:  link,
-			Date:  date,
-		}
-
-		// Add the article to the articles slice
-		news = append(news, article)
-	})
-
-	return news, nil
-} */
-
 func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 	// Create a rod browser instance
 	browser := rod.New().Timeout(1 * time.Minute).MustConnect()
@@ -124,13 +81,17 @@ func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 
 	// Create a new page and navigate to the Medusa news site
 	page := browser.MustPage("https://meduza.io/live/" + date + "/voyna").MustWaitLoad()
-
+	fmt.Println(page)
+	// Check if the page is a 404 error
+	status := page.MustInfo().Title
+	if status == "404 — Meduza" {
+		return nil, errors.New("Page not found")
+	}
 	// Wait for a few seconds to ensure content is loaded
-	time.Sleep(3 * time.Second)
-
+	time.Sleep(1 * time.Second)
 	// Find the div block with the most important news articles
 	div := page.MustElement("[data-testid=important-lead]")
-
+	fmt.Println(div)
 	// Extract the news from the div block
 	var news []ArticleShort
 	articles := div.MustElements("li")
@@ -164,10 +125,10 @@ func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 }
 
 func main() {
-	start_date := "2024/02/25"
+	start_date := "2024/02/24"
 	//ParseMedusaImportantNewsByDate(start_date)
-	//FastForward(start_date)
-	ParseAllByDate(start_date)
+	FastForward(start_date)
+	//ParseAllByDate(start_date)
 }
 
 func ParseArticle(link string) ([]ArticleFull, error) {
@@ -215,43 +176,45 @@ func ParseAllByDate(date string) {
 	log.Println("Parse all news from medusa by date: ", date)
 	news, err := ParseMedusaImportantNewsByDate(date)
 	if err != nil {
-		log.Fatal(err)
-	}
-	date = date + "/"
-	f_date, err := formatDate(date)
-	if err != nil {
-		log.Fatal(err)
-	}
+		fmt.Println("Page not found, skipping...")
 
-	data_dir, err := createDirectory("medusa_dump")
-	if err != nil {
-		log.Fatal(err)
-	}
+	} else {
+		date = date + "/"
+		f_date, err := formatDate(date)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	directory, err := createDirectory(data_dir + "/" + f_date)
-	if err != nil {
-		log.Fatal(err)
-	}
+		data_dir, err := createDirectory("medusa_dump")
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	filename_n := directory + "/" + "news_list.txt"
-	storeNewsList(news, filename_n)
+		directory, err := createDirectory(data_dir + "/" + f_date)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	// Process the collected news
-	for _, n := range news {
-		//fmt.Println("Title:", n.Title)
+		filename_n := directory + "/" + "news_list.txt"
+		storeNewsList(news, filename_n)
 
-		//fmt.Println("Link: ", n.Link)
-		if n.Link != "" {
-			articles, err := ParseArticle(n.Link)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Println(articles)
-			for _, a := range articles {
-				fmt.Println("TitleFull: ", a.Title)
-				fmt.Println("Full Content: ", a.Content)
-				filename := directory + "/" + a.Title + ".txt"
-				storeArticle(a, filename)
+		// Process the collected news
+		for _, n := range news {
+			//fmt.Println("Title:", n.Title)
+
+			//fmt.Println("Link: ", n.Link)
+			if n.Link != "" {
+				articles, err := ParseArticle(n.Link)
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Println(articles)
+				for _, a := range articles {
+					fmt.Println("TitleFull: ", a.Title)
+					fmt.Println("Full Content: ", a.Content)
+					filename := directory + "/" + a.Title + ".txt"
+					storeArticle(a, filename)
+				}
 			}
 		}
 	}
