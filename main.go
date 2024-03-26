@@ -81,7 +81,7 @@ func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 
 	// Create a new page and navigate to the Medusa news site
 	page := browser.MustPage("https://meduza.io/live/" + date + "/voyna").MustWaitLoad()
-	fmt.Println(page)
+
 	// Check if the page is a 404 error
 	status := page.MustInfo().Title
 	if status == "404 — Meduza" {
@@ -91,7 +91,7 @@ func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 	time.Sleep(1 * time.Second)
 	// Find the div block with the most important news articles
 	div := page.MustElement("[data-testid=important-lead]")
-	fmt.Println(div)
+
 	// Extract the news from the div block
 	var news []ArticleShort
 	articles := div.MustElements("li")
@@ -200,9 +200,6 @@ func ParseAllByDate(date string) {
 
 		// Process the collected news
 		for _, n := range news {
-			//fmt.Println("Title:", n.Title)
-
-			//fmt.Println("Link: ", n.Link)
 			if n.Link != "" {
 				articles, err := ParseArticle(n.Link)
 				if err != nil {
@@ -233,8 +230,6 @@ func formatDate(dateString string) (string, error) {
 
 	// Format the time.Time value to the desired output format
 	formattedDate := date.Format("2006-01-02")
-
-	fmt.Println("Formatted date:", formattedDate)
 	return formattedDate, nil
 }
 
