@@ -125,7 +125,7 @@ func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 }
 
 func main() {
-	start_date := "2024/02/24"
+	start_date := "2022/02/24"
 	//ParseMedusaImportantNewsByDate(start_date)
 	FastForward(start_date)
 	//ParseAllByDate(start_date)
@@ -257,7 +257,7 @@ func storeArticle(article ArticleFull, filename string) error {
 	}
 	defer file.Close()
 
-	// Write the JSON data to the file
+	// Write data to the file
 	_, err = file.WriteString(data)
 	if err != nil {
 		return err
