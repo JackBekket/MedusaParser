@@ -96,6 +96,10 @@ func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 	div := page.MustElement("[data-testid=important-lead]")
 	// Extract the news from the div block
 	var news []ArticleShort
+	hasIt, _, _ = page.Has("li")
+	if !hasIt {
+		return nil, errors.New("Page not found")
+	}
 	articles := div.MustElements("li")
 	for _, article := range articles {
 		// Extract the title of each article
@@ -134,7 +138,9 @@ func main() {
 }
 
 func ParseArticle(link string) ([]ArticleFull, error) {
-	// Create a Rod browser instance
+	if !strings.Contains(link, "meduza.io") {
+		return nil, errors.New("Bad link")
+	}
 	browser := rod.New().Context(context.Background())
 
 	// Connect to the browser instance
@@ -142,7 +148,6 @@ func ParseArticle(link string) ([]ArticleFull, error) {
 
 	// Close the browser after scraping
 	defer browser.MustClose()
-
 	// Use Rod's HTML parser to manipulate the DOM
 	hasIt, _, _ := page.Has("h1[data-testid=simple-title]")
 	if !hasIt {
@@ -180,7 +185,6 @@ func ParseArticle(link string) ([]ArticleFull, error) {
 		Link:    link,
 		Content: contentText,
 	}
-
 	// Return the article in a slice
 	return []ArticleFull{article}, nil
 
