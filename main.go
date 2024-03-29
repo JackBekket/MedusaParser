@@ -81,17 +81,19 @@ func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 
 	// Create a new page and navigate to the Medusa news site
 	page := browser.MustPage("https://meduza.io/live/" + date + "/voyna").MustWaitLoad()
-
+	time.Sleep(2 * time.Second)
 	// Check if the page is a 404 error
 	status := page.MustInfo().Title
 	if status == "404 — Meduza" {
 		return nil, errors.New("Page not found")
 	}
 	// Wait for a few seconds to ensure content is loaded
-	time.Sleep(1 * time.Second)
+	hasIt, _, _ := page.Has("[data-testid=important-lead]")
+	if !hasIt {
+		return nil, errors.New("Page not found")
+	}
 	// Find the div block with the most important news articles
 	div := page.MustElement("[data-testid=important-lead]")
-
 	// Extract the news from the div block
 	var news []ArticleShort
 	articles := div.MustElements("li")
@@ -125,7 +127,7 @@ func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 }
 
 func main() {
-	start_date := "2022/02/24"
+	start_date := "2022/10/26"
 	//ParseMedusaImportantNewsByDate(start_date)
 	FastForward(start_date)
 	//ParseAllByDate(start_date)
@@ -142,13 +144,26 @@ func ParseArticle(link string) ([]ArticleFull, error) {
 	defer browser.MustClose()
 
 	// Use Rod's HTML parser to manipulate the DOM
+	hasIt, _, _ := page.Has("h1[data-testid=simple-title]")
+	if !hasIt {
+		return nil, errors.New("Page not found")
+	}
 	el := page.MustElement("h1[data-testid=simple-title]")
+
 	title := el.MustText()
 
 	// Find the div block with additional content
+	hasIt, _, _ = page.Has("div.GeneralMaterial-module-body")
+	if !hasIt {
+		return nil, errors.New("Page not found")
+	}
 	el = page.MustElement("div.GeneralMaterial-module-body")
 
 	// Find all paragraphs within the content block
+	hasIt, _, _ = page.Has("p")
+	if !hasIt {
+		return nil, errors.New("Page not found")
+	}
 	paragraphs := el.MustElements("p")
 
 	// Concatenate text content of all paragraphs
@@ -168,6 +183,7 @@ func ParseArticle(link string) ([]ArticleFull, error) {
 
 	// Return the article in a slice
 	return []ArticleFull{article}, nil
+
 }
 
 // Get all news list and articles parsed and saved by date
@@ -200,15 +216,14 @@ func ParseAllByDate(date string) {
 
 		// Process the collected news
 		for _, n := range news {
+
 			if n.Link != "" {
 				articles, err := ParseArticle(n.Link)
 				if err != nil {
-					log.Fatal(err)
+					fmt.Println(err) // or log.Println(err)
+					continue         // move to the next element
 				}
-				fmt.Println(articles)
 				for _, a := range articles {
-					fmt.Println("TitleFull: ", a.Title)
-					fmt.Println("Full Content: ", a.Content)
 					filename := directory + "/" + a.Title + ".txt"
 					storeArticle(a, filename)
 				}
@@ -302,6 +317,7 @@ func storeNewsList(article []ArticleShort, filename string) error {
 func FastForward(start_date string) {
 	// Set the starting date
 	// startDateStr := "2022/02/24/"
+
 	startDateStr := start_date
 	startDate, err := time.Parse("2006/01/02", startDateStr)
 	if err != nil {
