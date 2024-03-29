@@ -127,7 +127,7 @@ func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 }
 
 func main() {
-	start_date := "2022/10/26"
+	start_date := "2022/02/24"
 	//ParseMedusaImportantNewsByDate(start_date)
 	FastForward(start_date)
 	//ParseAllByDate(start_date)
