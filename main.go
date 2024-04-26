@@ -27,9 +27,9 @@ type ArticleFull struct {
 func main() {
 	start_date := "2022/02/24"
 	//ParseAllByDate(start_date)
-	FastForward(start_date)
-	//ParseAllByDate(start_date)
-	//ParseAllByDate(start_date)
+	//ParseOlderHTML(start_date)
+	//FastForward(start_date)
+
 }
 
 func FastForward(start_date string) {
@@ -181,7 +181,7 @@ func ParseArticle(link string) ([]ArticleFull, error) {
 	// Use Rod's HTML parser to manipulate the DOM
 	hasIt, _, _ := page.Has("h1[data-testid=simple-title]")
 	if !hasIt {
-		return nil, errors.New("Page not found")
+		return nil, errors.New("Page not found1")
 	}
 	el := page.MustElement("h1[data-testid=simple-title]")
 
@@ -190,14 +190,14 @@ func ParseArticle(link string) ([]ArticleFull, error) {
 	// Find the div block with additional content
 	hasIt, _, _ = page.Has("div.GeneralMaterial-module-body")
 	if !hasIt {
-		return nil, errors.New("Page not found")
+		return nil, errors.New("Page not found2")
 	}
 	el = page.MustElement("div.GeneralMaterial-module-body")
 
 	// Find all paragraphs within the content block
 	hasIt, _, _ = page.Has("p")
 	if !hasIt {
-		return nil, errors.New("Page not found")
+		return nil, errors.New("Page not found3")
 	}
 	paragraphs := el.MustElements("p")
 
@@ -259,10 +259,7 @@ func createDirectory(name string) (string, error) {
 }
 
 func storeNewsList(article []ArticleShort, filename string) error {
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
+	file, err := os.Create(filename))
 	defer file.Close()
 
 	for _, article := range article {
@@ -299,10 +296,10 @@ func ParseOlderHTML(date string) ([]ArticleFull, error) {
 	elements := page.MustElements(".Slide-module-isInLive")
 
 	var articles []ArticleFull
-	var title string
+
 	// Iterate through each element
 	for _, element := range elements {
-
+		var title string
 		hasIt, _, _ := element.Has("h4")
 		if hasIt {
 			titleElement := element.MustElement("h4")
@@ -317,6 +314,19 @@ func ParseOlderHTML(date string) ([]ArticleFull, error) {
 		hasIt, _, _ = page.Has("p")
 		if hasIt {
 			contentElements = element.MustElements("p")
+		}
+
+		hasLink, _, _ := element.Has("a")
+		if hasLink {
+
+			aElement := element.MustElement("a")
+			link, _ := aElement.Attribute("href")
+			if link != nil && strings.Contains(*link, "meduza.io/feature") {
+				article, err := ParseArticle(*link)
+				if err == nil {
+					articles = append(articles, article[0])
+				}
+			}
 		}
 
 		// Concatenate text from all p elements to form the content
