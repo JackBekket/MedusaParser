@@ -28,7 +28,7 @@ func main() {
 	start_date := "2022/02/24"
 	//ParseAllByDate(start_date)
 	//ParseOlderHTML(start_date)
-	//FastForward(start_date)
+	FastForward(start_date)
 
 }
 
@@ -259,7 +259,7 @@ func createDirectory(name string) (string, error) {
 }
 
 func storeNewsList(article []ArticleShort, filename string) error {
-	file, err := os.Create(filename))
+	file, _ := os.Create(filename)
 	defer file.Close()
 
 	for _, article := range article {
