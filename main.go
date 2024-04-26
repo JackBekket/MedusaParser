@@ -25,10 +25,10 @@ type ArticleFull struct {
 }
 
 func main() {
-	start_date := "2022/02/24"
-	//ParseAllByDate(start_date)
+	start_date := "2024/03/24"
+	ParseAllByDate(start_date)
 	//ParseOlderHTML(start_date)
-	FastForward(start_date)
+	//FastForward(start_date)
 
 }
 
@@ -95,20 +95,20 @@ func ParseAllByDate(date string) {
 					}
 				}
 			}
-		} else {
-			date = strings.TrimSuffix(date, "/")
-			articles := GetArticlesFromOlderHTML(date)
-			for i, a := range articles {
-				if i == 0 {
-					continue
-				}
-				a.Link = "https://meduza.io/live/" + date + "/voyna"
-				filename := directory + "/" + a.Title + ".txt"
-				storeArticle(a, filename)
+		}
+		date = strings.TrimSuffix(date, "/")
+		articles := GetArticlesFromOlderHTML(date)
+		for i, a := range articles {
+			if i == 0 {
+				continue
 			}
+			a.Link = "https://meduza.io/live/" + date + "/voyna"
+			filename := directory + "/" + a.Title + ".txt"
+			storeArticle(a, filename)
 		}
 	}
 }
+
 func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 	// Create a rod browser instance
 	browser := rod.New().Timeout(1 * time.Minute).MustConnect()
@@ -322,7 +322,9 @@ func ParseOlderHTML(date string) ([]ArticleFull, error) {
 			aElement := element.MustElement("a")
 			link, _ := aElement.Attribute("href")
 			if link != nil && strings.Contains(*link, "meduza.io/feature") {
+
 				article, err := ParseArticle(*link)
+
 				if err == nil {
 					articles = append(articles, article[0])
 				}
@@ -331,15 +333,18 @@ func ParseOlderHTML(date string) ([]ArticleFull, error) {
 
 		// Concatenate text from all p elements to form the content
 		var content string
-		for _, contentElement := range contentElements {
+		for i, contentElement := range contentElements {
 
 			text, err := contentElement.Text()
-
+			if title == "" && i == 0 {
+				title = text
+			}
 			if err != nil {
 				// Handle error if unable to get text
 				return nil, err
 			}
 			content += text + "\n" // Add newline between paragraphs
+
 		}
 
 		// Append the extracted article to the articles slice
@@ -365,12 +370,16 @@ func removeDuplicates(articles []ArticleFull) []ArticleFull {
 	var uniqueArticles []ArticleFull
 
 	for _, article := range articles {
-		// Check if title or content already exists
-		if !uniqueMap[article.Title] && !uniqueMap[article.Content] {
-			// If it doesn't exist, add it to the map and append to the uniqueArticles slice
-			uniqueMap[article.Title] = true
-			uniqueMap[article.Content] = true
-			uniqueArticles = append(uniqueArticles, article)
+		// Check if both title and content are non-empty
+		if article.Title != "" || article.Content != "" {
+			// Generate a unique key based on non-empty fields
+			key := article.Title + "||" + article.Content
+			// Check if the key exists in the map
+			if !uniqueMap[key] {
+				// If it doesn't exist, add it to the map and append to the uniqueArticles slice
+				uniqueMap[key] = true
+				uniqueArticles = append(uniqueArticles, article)
+			}
 		}
 	}
 
