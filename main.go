@@ -5,22 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/go-rod/rod"
 )
-
-/*
-type News struct {
-	Title       string
-	Description string
-	// Add more fields as per your requirements
-}
-*/
 
 type ArticleShort struct {
 	Title string
@@ -34,44 +24,91 @@ type ArticleFull struct {
 	Content string
 }
 
-func ParseMedusaImportantNews() ([]ArticleShort, error) {
-	// Make an HTTP GET request to the Medusa news site
-	resp, err := http.Get("https://meduza.io/live/2024/02/01/voyna")
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	// Parse the HTML document
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	// Find the div block with the most important news articles
-	div := doc.Find("div[data-testid=important-lead]")
-
-	// Extract the news from the div block
-	var news []ArticleShort
-	div.Find("li").Each(func(i int, s *goquery.Selection) {
-		// Extract the title, description, and link of each article
-		//title := s.Find("a").Text()
-		title := s.Text()
-		link, _ := s.Find("a").Attr("href")
-
-		// Create a new article object with the extracted data
-		article := ArticleShort{
-			Title: title,
-			Link:  link,
-		}
-
-		// Add the article to the articles slice
-		news = append(news, article)
-	})
-
-	return news, nil
+func main() {
+	start_date := "2022/02/24"
+	//ParseAllByDate(start_date)
+	FastForward(start_date)
+	//ParseAllByDate(start_date)
+	//ParseAllByDate(start_date)
 }
 
+func FastForward(start_date string) {
+	startDateStr := start_date
+	startDate, err := time.Parse("2006/01/02", startDateStr)
+	if err != nil {
+		fmt.Println("Invalid start date format:", err)
+		return
+	}
+	currentDate := time.Now()
+	for date := startDate; date.Before(currentDate); date = date.AddDate(0, 0, 1) {
+		dateStr := date.Format("2006/01/02")
+		ParseAllByDate(dateStr)
+	}
+}
+
+func ParseAllByDate(date string) {
+	log.Println("Parse all news from medusa by date: ", date)
+	news, err := ParseMedusaImportantNewsByDate(date)
+	if err != nil {
+		fmt.Println("Page not found, skipping...")
+
+	} else {
+		date = date + "/"
+		f_date, err := formatDate(date)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		data_dir, err := createDirectory("medusa_dump")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		directory, err := createDirectory(data_dir + "/" + f_date)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		filename_n := directory + "/" + "news_list.txt"
+		storeNewsList(news, filename_n)
+
+		hasNonEmptyLink := false
+		for _, n := range news {
+			if n.Link != "" {
+				hasNonEmptyLink = true
+				break
+			}
+		}
+
+		if hasNonEmptyLink {
+			for _, n := range news {
+
+				if n.Link != "" {
+					articles, err := ParseArticle(n.Link)
+					if err != nil {
+						fmt.Println(err) // or log.Println(err)
+						continue         // move to the next element
+					}
+					for _, a := range articles {
+						filename := directory + "/" + a.Title + ".txt"
+						storeArticle(a, filename)
+					}
+				}
+			}
+		} else {
+			date = strings.TrimSuffix(date, "/")
+			articles := GetArticlesFromOlderHTML(date)
+			for i, a := range articles {
+				if i == 0 {
+					continue
+				}
+				a.Link = "https://meduza.io/live/" + date + "/voyna"
+				filename := directory + "/" + a.Title + ".txt"
+				storeArticle(a, filename)
+			}
+		}
+	}
+}
 func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 	// Create a rod browser instance
 	browser := rod.New().Timeout(1 * time.Minute).MustConnect()
@@ -130,13 +167,6 @@ func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 	return news, nil
 }
 
-func main() {
-	start_date := "2022/02/24"
-	//ParseMedusaImportantNewsByDate(start_date)
-	FastForward(start_date)
-	//ParseAllByDate(start_date)
-}
-
 func ParseArticle(link string) ([]ArticleFull, error) {
 	if !strings.Contains(link, "meduza.io") {
 		return nil, errors.New("Bad link")
@@ -185,55 +215,23 @@ func ParseArticle(link string) ([]ArticleFull, error) {
 		Link:    link,
 		Content: contentText,
 	}
-	// Return the article in a slice
+
 	return []ArticleFull{article}, nil
 
 }
 
-// Get all news list and articles parsed and saved by date
-func ParseAllByDate(date string) {
-
-	log.Println("Parse all news from medusa by date: ", date)
-	news, err := ParseMedusaImportantNewsByDate(date)
+func storeArticle(article ArticleFull, filename string) error {
+	data := article.Title + "\n\n" + article.Content
+	file, err := os.Create(filename)
 	if err != nil {
-		fmt.Println("Page not found, skipping...")
-
-	} else {
-		date = date + "/"
-		f_date, err := formatDate(date)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		data_dir, err := createDirectory("medusa_dump")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		directory, err := createDirectory(data_dir + "/" + f_date)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		filename_n := directory + "/" + "news_list.txt"
-		storeNewsList(news, filename_n)
-
-		// Process the collected news
-		for _, n := range news {
-
-			if n.Link != "" {
-				articles, err := ParseArticle(n.Link)
-				if err != nil {
-					fmt.Println(err) // or log.Println(err)
-					continue         // move to the next element
-				}
-				for _, a := range articles {
-					filename := directory + "/" + a.Title + ".txt"
-					storeArticle(a, filename)
-				}
-			}
-		}
+		return err
 	}
+	defer file.Close()
+	_, err = file.WriteString(data)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func formatDate(dateString string) (string, error) {
@@ -260,56 +258,16 @@ func createDirectory(name string) (string, error) {
 	return name, nil
 }
 
-func storeArticle(article ArticleFull, filename string) error {
-	// Convert the ArticleFull struct to JSON
-
-	data := article.Title + "\n\n" + article.Content
-
-	//title := ArticleFull.Title
-
-	//data := ArticleFull.Title + ArticleFull.Content
-
-	// Create a new file
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// Write data to the file
-	_, err = file.WriteString(data)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func storeNewsList(article []ArticleShort, filename string) error {
-	// Convert the ArticleFull struct to JSON
-	/*
-	   data, err := json.Marshal(article)
-	   if err != nil {
-	       return err
-	   }
-	*/
-
-	// Create a new file
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	// Iterate over each ArticleFull in the slice
 	for _, article := range article {
-		// Prepare the string to write, including the title and content.
-		// Feel free to adjust the formatting to meet your needs
 		output := fmt.Sprintf("Title: %s\nContent: %s\n\n", article.Date, article.Title)
-
-		// Write the formatted string to the file
 		if _, err := file.WriteString(output); err != nil {
-			// If an error occurs, return the error
 			return err
 		}
 	}
@@ -317,28 +275,100 @@ func storeNewsList(article []ArticleShort, filename string) error {
 	return nil
 }
 
-// get and saves all news from start date till now
-func FastForward(start_date string) {
-	// Set the starting date
-	// startDateStr := "2022/02/24/"
+func ParseOlderHTML(date string) ([]ArticleFull, error) {
+	// Create a rod browser instance
+	browser := rod.New().Timeout(1 * time.Minute).MustConnect()
 
-	startDateStr := start_date
-	startDate, err := time.Parse("2006/01/02", startDateStr)
-	if err != nil {
-		fmt.Println("Invalid start date format:", err)
-		return
+	// Close the browser when done
+	defer browser.MustClose()
+
+	// Create a new page and navigate to the Medusa news site
+	page := browser.MustPage("https://meduza.io/live/" + date + "/voyna").MustWaitLoad()
+	time.Sleep(2 * time.Second)
+
+	// Check if the page is a 404 error
+	status := page.MustInfo().Title
+	if status == "404 — Meduza" {
+		return nil, errors.New("Page not found")
 	}
 
-	// Get the current date
-	currentDate := time.Now()
-
-	// Iterate over the range of dates
-	for date := startDate; date.Before(currentDate); date = date.AddDate(0, 0, 1) {
-		// Format the date to match the expected format for the Medusa site
-		dateStr := date.Format("2006/01/02")
-
-		// Your parsing logic goes here
-		// Call the function or perform the action to parse the news for the given date
-		ParseAllByDate(dateStr)
+	hasIt, _, _ := page.Has(".Slide-module-isInLive")
+	if !hasIt {
+		return nil, errors.New("Elements not found")
 	}
+	elements := page.MustElements(".Slide-module-isInLive")
+
+	var articles []ArticleFull
+	var title string
+	// Iterate through each element
+	for _, element := range elements {
+
+		hasIt, _, _ := element.Has("h4")
+		if hasIt {
+			titleElement := element.MustElement("h4")
+
+			// Get the text of the h4 element (which is the title)
+			title, _ = titleElement.Text()
+
+		}
+
+		var contentElements rod.Elements
+
+		hasIt, _, _ = page.Has("p")
+		if hasIt {
+			contentElements = element.MustElements("p")
+		}
+
+		// Concatenate text from all p elements to form the content
+		var content string
+		for _, contentElement := range contentElements {
+
+			text, err := contentElement.Text()
+
+			if err != nil {
+				// Handle error if unable to get text
+				return nil, err
+			}
+			content += text + "\n" // Add newline between paragraphs
+		}
+
+		// Append the extracted article to the articles slice
+		articles = append(articles, ArticleFull{
+			Title:   title,
+			Content: content,
+		})
+	}
+
+	return articles, nil
+}
+
+func PrintArticles(articles []ArticleFull) {
+	for _, article := range articles {
+		fmt.Println("Title: " + article.Title)
+		fmt.Println("Content: " + article.Content)
+	}
+}
+
+func removeDuplicates(articles []ArticleFull) []ArticleFull {
+	// Map to store unique titles or contents
+	uniqueMap := make(map[string]bool)
+	var uniqueArticles []ArticleFull
+
+	for _, article := range articles {
+		// Check if title or content already exists
+		if !uniqueMap[article.Title] && !uniqueMap[article.Content] {
+			// If it doesn't exist, add it to the map and append to the uniqueArticles slice
+			uniqueMap[article.Title] = true
+			uniqueMap[article.Content] = true
+			uniqueArticles = append(uniqueArticles, article)
+		}
+	}
+
+	return uniqueArticles
+}
+
+func GetArticlesFromOlderHTML(date string) []ArticleFull {
+	art, _ := ParseOlderHTML(date)
+	art = removeDuplicates(art)
+	return art
 }
