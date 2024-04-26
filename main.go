@@ -25,7 +25,7 @@ type ArticleFull struct {
 }
 
 func main() {
-	start_date := "2024/03/24"
+	start_date := "2022/02/24"
 	ParseAllByDate(start_date)
 	//ParseOlderHTML(start_date)
 	//FastForward(start_date)
