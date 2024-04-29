@@ -26,9 +26,9 @@ type ArticleFull struct {
 
 func main() {
 	start_date := "2022/02/24"
-	ParseAllByDate(start_date)
+	//ParseAllByDate(start_date)
 	//ParseOlderHTML(start_date)
-	//FastForward(start_date)
+	FastForward(start_date)
 
 }
 
@@ -105,6 +105,7 @@ func ParseAllByDate(date string) {
 			a.Link = "https://meduza.io/live/" + date + "/voyna"
 			filename := directory + "/" + a.Title + ".txt"
 			storeArticle(a, filename)
+			
 		}
 	}
 }
