@@ -6,7 +6,8 @@ import (
     "os"
     "path/filepath"
     "strings"
-	"github.com/tmc/langchaingo/embeddings"
+	//"github.com/tmc/langchaingo/embeddings"
+	"github.com/tmc/langchaingo/schema"
 )
 
 type FileData struct {
