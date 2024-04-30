@@ -26,9 +26,9 @@ type ArticleFull struct {
 
 func main() {
 	start_date := "2022/02/24"
-	ParseAllByDate(start_date)
+	//ParseAllByDate(start_date)
 	//ParseOlderHTML(start_date)
-	//FastForward(start_date)
+	FastForward(start_date)
 
 }
 
@@ -90,7 +90,7 @@ func ParseAllByDate(date string) {
 						continue         // move to the next element
 					}
 					for _, a := range articles {
-						filename := directory + "/" + a.Title + ".txt"
+						filename := directory + "/" + getFirstSentence(a.Title) + ".txt"
 						storeArticle(a, filename)
 					}
 				}
@@ -103,7 +103,7 @@ func ParseAllByDate(date string) {
 				continue
 			}
 			a.Link = "https://meduza.io/live/" + date + "/voyna"
-			filename := directory + "/" + a.Title + ".txt"
+			filename := directory + "/" + getFirstSentence(a.Title) + ".txt"
 			storeArticle(a, filename)
 		}
 	}
@@ -122,12 +122,12 @@ func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 	// Check if the page is a 404 error
 	status := page.MustInfo().Title
 	if status == "404 — Meduza" {
-		return nil, errors.New("Page not found")
+		return nil, errors.New("Page not found...")
 	}
 	// Wait for a few seconds to ensure content is loaded
 	hasIt, _, _ := page.Has("[data-testid=important-lead]")
 	if !hasIt {
-		return nil, errors.New("Page not found")
+		return nil, errors.New("Leads not found...")
 	}
 	// Find the div block with the most important news articles
 	div := page.MustElement("[data-testid=important-lead]")
@@ -135,7 +135,7 @@ func ParseMedusaImportantNewsByDate(date string) ([]ArticleShort, error) {
 	var news []ArticleShort
 	hasIt, _, _ = page.Has("li")
 	if !hasIt {
-		return nil, errors.New("Page not found")
+		return nil, errors.New("Elements not found...")
 	}
 	articles := div.MustElements("li")
 	for _, article := range articles {
@@ -181,7 +181,7 @@ func ParseArticle(link string) ([]ArticleFull, error) {
 	// Use Rod's HTML parser to manipulate the DOM
 	hasIt, _, _ := page.Has("h1[data-testid=simple-title]")
 	if !hasIt {
-		return nil, errors.New("Page not found1")
+		return nil, errors.New("Title not found, skipping article...")
 	}
 	el := page.MustElement("h1[data-testid=simple-title]")
 
@@ -190,14 +190,14 @@ func ParseArticle(link string) ([]ArticleFull, error) {
 	// Find the div block with additional content
 	hasIt, _, _ = page.Has("div.GeneralMaterial-module-body")
 	if !hasIt {
-		return nil, errors.New("Page not found2")
+		return nil, errors.New("Content not found, skipping article...")
 	}
 	el = page.MustElement("div.GeneralMaterial-module-body")
 
 	// Find all paragraphs within the content block
 	hasIt, _, _ = page.Has("p")
 	if !hasIt {
-		return nil, errors.New("Page not found3")
+		return nil, errors.New("Paragraphs not found, skipping article...")
 	}
 	paragraphs := el.MustElements("p")
 
@@ -221,6 +221,7 @@ func ParseArticle(link string) ([]ArticleFull, error) {
 }
 
 func storeArticle(article ArticleFull, filename string) error {
+	filename = getFirstSentence(filename)
 	data := article.Title + "\n\n" + article.Content
 	file, err := os.Create(filename)
 	if err != nil {
@@ -291,7 +292,7 @@ func ParseOlderHTML(date string) ([]ArticleFull, error) {
 
 	hasIt, _, _ := page.Has(".Slide-module-isInLive")
 	if !hasIt {
-		return nil, errors.New("Elements not found")
+		return nil, errors.New("Elements not found, skipping this article...")
 	}
 	elements := page.MustElements(".Slide-module-isInLive")
 
@@ -321,12 +322,14 @@ func ParseOlderHTML(date string) ([]ArticleFull, error) {
 
 			aElement := element.MustElement("a")
 			link, _ := aElement.Attribute("href")
-			if link != nil && strings.Contains(*link, "meduza.io/feature") {
+			if link != nil && strings.Contains(*link, "/feature") && !strings.Contains(*link, "meduza.io") {
 
-				article, err := ParseArticle(*link)
-
+				linkFull := "https://meduza.io" + *link
+				article, err := ParseFeature(linkFull)
 				if err == nil {
-					articles = append(articles, article[0])
+					articles = append(articles, article)
+				} else {
+					fmt.Println(err)
 				}
 			}
 		}
@@ -390,4 +393,66 @@ func GetArticlesFromOlderHTML(date string) []ArticleFull {
 	art, _ := ParseOlderHTML(date)
 	art = removeDuplicates(art)
 	return art
+}
+
+func ParseFeature(link string) (ArticleFull, error) {
+	var article ArticleFull
+	browser := rod.New().Context(context.Background())
+	if !strings.Contains(link, "meduza.io/feature") {
+		return article, errors.New("Bad link, skipping that article...")
+	}
+	page := browser.MustConnect().MustPage(link).MustWaitLoad()
+	defer browser.MustClose()
+	hasIt, _, _ := page.Has("data-testid=rich-title")
+	if hasIt {
+		el := page.MustElement("data-testid=rich-title")
+		article.Title = el.MustText()
+	}
+
+	// Find the div block with additional content
+	hasIt, _, _ = page.Has("div.GeneralMaterial-module-article")
+	if !hasIt {
+		return article, errors.New("Can't recognise the article, skipping...")
+	}
+	el := page.MustElement("div.GeneralMaterial-module-article")
+
+	// Find all paragraphs within the content block
+	hasIt, _, _ = page.Has("p")
+	if !hasIt {
+		return article, errors.New("Paragraphs in article not found, skipping...")
+	}
+	paragraphs := el.MustElements("p")
+
+	// Concatenate text content of all paragraphs
+	var content strings.Builder
+	for _, p := range paragraphs {
+		content.WriteString(p.MustText() + "\n")
+	}
+
+	if article.Title == "" {
+		article.Title = paragraphs[0].MustText()
+	}
+
+	contentText := strings.TrimSpace(content.String())
+
+	article.Link = link
+	article.Content = contentText
+
+	return article, nil
+
+}
+
+func getFirstSentence(text string) string {
+	// Split the text by ".", "!", "?" to get individual sentences
+	sentences := strings.FieldsFunc(text, func(r rune) bool {
+		return r == '.' || r == '!' || r == '?'
+	})
+	if len(sentences) > 0 {
+		words := strings.Fields(sentences[0])
+		if len(words) > 6 {
+			return strings.Join(words[:6], " ")
+		}
+		return sentences[0]
+	}
+	return text
 }
