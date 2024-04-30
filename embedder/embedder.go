@@ -74,7 +74,7 @@ func parseFiles(path string) ([]FileData, error) {
 }
 
 func main() {
-    _, err := parseFiles("/../medusa_dump")
+    _, err := parseFiles("../medusa_dump")
     if err != nil {
         fmt.Println(err)
     }
