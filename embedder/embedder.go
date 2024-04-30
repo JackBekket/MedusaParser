@@ -59,7 +59,7 @@ func parseFiles(path string) ([]FileData, error) {
 
             fileData := FileData{
                 Date: directory,
-                Filename:  filename,
+                Title:  filename,
                 Content:   string(content),
             }
 
