@@ -106,7 +106,7 @@ func main() {
 
 	docs := GetDocsShemaByFiles(files)
 	localai.LoadDocsToStore(docs)
-	CallSemanticSearch("Навальный",5)
-	CallRagSearch("Когда убили Навального?",5)
+	CallSemanticSearch("Навальный",15)
+	CallRagSearch("Когда убили Алексея Навального?",15)
 	
 }
