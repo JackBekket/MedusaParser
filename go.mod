@@ -3,7 +3,7 @@ module MedusaParser
 go 1.22.1
 
 require (
-	github.com/JackBekket/uncensoredgpt_tgbot v0.0.0-20240430165908-07de791b53e8
+	github.com/JackBekket/uncensoredgpt_tgbot v0.0.0-20240430181902-544202d5a915
 	github.com/go-rod/rod v0.114.8
 	github.com/tmc/langchaingo v0.1.9
 )
@@ -14,11 +14,14 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/PuerkitoBio/goquery v1.8.1 // indirect
+	github.com/StarkBotsIndustries/telegraph v1.0.0 // indirect
+	github.com/anaskhan96/soup v1.2.5 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/dlclark/regexp2 v1.10.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/goph/emperror v0.17.2 // indirect
