@@ -11,10 +11,9 @@ import (
 )
 
 type FileData struct {
-    Directory string
-    Filename  string
     Content   string
     Date      string
+	Title	  string
 }
 
 func GetDocsShemaByFile(fileData []FileData) []schema.Document {
@@ -50,14 +49,22 @@ func parseFiles(path string) ([]FileData, error) {
 
             directory, filename := filepath.Split(path)
 
+		           // Remove "../medusa_dump/" from the directory
+				   directory = strings.TrimPrefix(directory, "../medusa_dump/")
+				   // Remove the trailing slash from the directory
+				   directory = strings.TrimSuffix(directory, "/")
+	   
+				   // Remove ".txt" from the filename
+				   filename = strings.TrimSuffix(filename, ".txt")
+
             fileData := FileData{
-                Directory: directory,
+                Date: directory,
                 Filename:  filename,
                 Content:   string(content),
             }
 
-            fmt.Println("Directory:", directory)
-            fmt.Println("Filename:", filename)
+            fmt.Println("Date:", directory)
+            fmt.Println("Title:", filename)
             fmt.Println("Content:", string(content))
 
             files = append(files, fileData)
