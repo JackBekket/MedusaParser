@@ -25,7 +25,7 @@ type ArticleFull struct {
 }
 
 func main() {
-	start_date := "2022/02/24"
+	start_date := "2023/10/23"
 	//ParseAllByDate(start_date)
 	//ParseOlderHTML(start_date)
 	FastForward(start_date)
@@ -67,10 +67,12 @@ func FastForward(start_date string) {
 			} else {
 				log.Fatal(err)
 			}
+		} else {
+			ParseAllByDate(dateStr)
 		}
 
 
-		ParseAllByDate(dateStr)
+		
 	}
 }
 
@@ -286,15 +288,15 @@ func formatDate(dateString string) (string, error) {
 }
 
 func createDirectory(name string) (string, error) {
-	if _, err := os.Stat(name); os.IsNotExist(err) {
+	if _, err1 := os.Stat(name); os.IsNotExist(err1) {
 
 	
 	err := os.MkdirAll(name, os.ModePerm)
 	if err != nil {
 		return "", err
 	}
-	} else if err != nil {
-        return "", err
+	} else if err1 != nil {
+        return "", err1
     }
 	return name, nil
 }
