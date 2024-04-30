@@ -8,7 +8,7 @@ import (
     "strings"
 	//"github.com/tmc/langchaingo/embeddings"
 	"github.com/tmc/langchaingo/schema"
-	skynet "github.com/jackbekket/uncensoredgpt_tgbot/lib/embeddings"
+	skynet "github.com/JackBekket/uncensoredgpt_tgbot/lib/embeddings"
 )
 
 type FileData struct {
