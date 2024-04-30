@@ -6,6 +6,7 @@ import (
     "os"
     "path/filepath"
     "strings"
+	"log"
 	//"github.com/tmc/langchaingo/embeddings"
 	"github.com/tmc/langchaingo/schema"
 	localai "github.com/JackBekket/uncensoredgpt_tgbot/lib/embeddings"
