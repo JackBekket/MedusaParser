@@ -8,7 +8,7 @@ import (
     "strings"
 	//"github.com/tmc/langchaingo/embeddings"
 	"github.com/tmc/langchaingo/schema"
-	skynet "github.com/JackBekket/uncensoredgpt_tgbot/lib/embeddings"
+	localai "github.com/JackBekket/uncensoredgpt_tgbot/lib/embeddings"
 )
 
 type FileData struct {
@@ -81,6 +81,22 @@ func parseFiles(path string) ([]FileData, error) {
     return files, nil
 }
 
+func CallSemanticSearch(promt string, max_results int) {
+	docs,err :=localai.SemanticSearch(promt,max_results)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println("Semantic Search results:", docs)
+}
+
+func CallRagSearch(promt string, max_results int) {
+	result, err := localai.RagSearch(promt,max_results)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println("RAG result:", result)
+}
+
 func main() {
     files, err := parseFiles("../medusa_dump")
     if err != nil {
@@ -88,5 +104,6 @@ func main() {
     }
 
 	docs := GetDocsShemaByFiles(files)
-	skynet.LoadDocsToStore(docs)
+	localai.LoadDocsToStore(docs)
+	
 }
