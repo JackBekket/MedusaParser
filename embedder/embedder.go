@@ -8,6 +8,7 @@ import (
     "strings"
 	//"github.com/tmc/langchaingo/embeddings"
 	"github.com/tmc/langchaingo/schema"
+	skynet "github.com/jackbekket/uncensoredgpt_tgbot/lib/embeddings"
 )
 
 type FileData struct {
@@ -16,7 +17,7 @@ type FileData struct {
 	Title	  string
 }
 
-func GetDocsShemaByFile(fileData []FileData) []schema.Document {
+func GetDocsShemaByFiles(fileData []FileData) []schema.Document {
     var docs []schema.Document
 
     for _, data := range fileData {
@@ -81,8 +82,11 @@ func parseFiles(path string) ([]FileData, error) {
 }
 
 func main() {
-    _, err := parseFiles("../medusa_dump")
+    files, err := parseFiles("../medusa_dump")
     if err != nil {
         fmt.Println(err)
     }
+
+	docs := GetDocsShemaByFiles(files)
+	skynet.LoadDocsToStore(docs)
 }
