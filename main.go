@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/go-rod/rod"
 )
@@ -43,21 +44,16 @@ func FastForward(start_date string) {
 	for date := startDate; date.Before(currentDate); date = date.AddDate(0, 0, 1) {
 		dateStr := date.Format("2006/01/02")
 
-
-	
 		date_str := dateStr + "/"
 		f_date, err := formatDate(date_str)
 		if err != nil {
 			log.Fatal(err)
 		}
-	
-	
+
 		data_dir, err := createDirectory("medusa_dump")
 		if err != nil {
 			log.Fatal(err)
 		}
-
-
 
 		directory, err := createDirectory(data_dir + "/" + f_date)
 		if err != nil {
@@ -69,17 +65,11 @@ func FastForward(start_date string) {
 			}
 		}
 
-
 		ParseAllByDate(dateStr)
 	}
 }
 
-
-
-
 func ParseAllByDate(date string) {
-
-
 
 	log.Println("Parse all news from medusa by date: ", date)
 	news, err := ParseMedusaImportantNewsByDate(date)
@@ -103,8 +93,8 @@ func ParseAllByDate(date string) {
 			log.Fatal(err)
 		}
 
-		filename_n := directory + "/" + "news_list.txt"
-		storeNewsList(news, filename_n)
+		/* filename_n := directory + "/" + "news_list.txt"
+		storeNewsList(news, filename_n) */
 
 		hasNonEmptyLink := false
 		for _, n := range news {
@@ -255,16 +245,20 @@ func ParseArticle(link string) ([]ArticleFull, error) {
 }
 
 func storeArticle(article ArticleFull, filename string) error {
+
 	filename = getFirstSentence(filename)
 	data := article.Title + "\n\n" + article.Content
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	_, err = file.WriteString(data)
-	if err != nil {
-		return err
+	if containsMoreThanTwoParagraphs(data) {
+		file, err := os.Create(filename)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		_, err = file.WriteString(data)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 	return nil
 }
@@ -288,14 +282,13 @@ func formatDate(dateString string) (string, error) {
 func createDirectory(name string) (string, error) {
 	if _, err := os.Stat(name); os.IsNotExist(err) {
 
-	
-	err := os.MkdirAll(name, os.ModePerm)
-	if err != nil {
+		err := os.MkdirAll(name, os.ModePerm)
+		if err != nil {
+			return "", err
+		}
+	} else if err != nil {
 		return "", err
 	}
-	} else if err != nil {
-        return "", err
-    }
 	return name, nil
 }
 
@@ -495,4 +488,15 @@ func getFirstSentence(text string) string {
 		return sentences[0]
 	}
 	return text
+}
+
+func containsMoreThanTwoParagraphs(article string) bool {
+	paragraphs := strings.Split(article, "\n\n")
+	if len(paragraphs) < 1 {
+		return false
+	}
+	secondParagraphWords := strings.FieldsFunc(paragraphs[1], func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsNumber(r)
+	})
+	return len(secondParagraphWords) > 15
 }
