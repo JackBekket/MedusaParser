@@ -126,7 +126,7 @@ func main() {
     elapsed = time.Since(start2)
     fmt.Printf("Функция RAG заняла %s\n", elapsed)
 
-    start2 := time.Now()
+    start2 = time.Now()
 	CallSemanticSearch("Пригожин", 5)
     elapsed = time.Since(start2)
     fmt.Printf("Функция semantic search заняла %s\n", elapsed)
