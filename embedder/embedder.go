@@ -126,17 +126,25 @@ func main() {
     elapsed = time.Since(start2)
     fmt.Printf("Функция RAG заняла %s\n", elapsed)
 
+    start2 := time.Now()
+	CallSemanticSearch("Пригожин", 5)
+    elapsed = time.Since(start2)
+    fmt.Printf("Функция semantic search заняла %s\n", elapsed)
+    
+
     start2 = time.Now()
     CallRag("Когда был бунт Пригожина?", 1)
     elapsed = time.Since(start2)
     fmt.Printf("Функция RAG заняла %s\n", elapsed)
     //CallSemanticSearch
 
-    
+    /*
     start2 = time.Now()
     CallRag("Как положить конец войне в Украине и свергнуть Путина?",3)
     elapsed = time.Since(start2)
     fmt.Printf("Функция RAG (как закончить войну) занял %s\n", elapsed)
+    */
+
 
     elapsed = time.Since(start)
     fmt.Printf("Всего времени потрачено %s\n", elapsed)
