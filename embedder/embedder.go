@@ -113,30 +113,35 @@ func main() {
 	docs := GetDocsShemaByFiles(files)
 	localai.LoadDocsToStore(docs)
 
-    elapsed := time.Since(start)
-    fmt.Printf("Функция загрузки документов заняла %s\n", elapsed)
+    elapsed1 := time.Since(start)
+    fmt.Printf("Функция загрузки документов заняла %s\n", elapsed1)
 
     start2 := time.Now()
 	CallSemanticSearch("Навальный", 5)
-    elapsed = time.Since(start2)
-    fmt.Printf("Функция semantic search заняла %s\n", elapsed)
+    elapsed2 := time.Since(start2)
+    //fmt.Printf("Функция semantic search заняла %s\n", elapsed2)
 
-    start2 = time.Now()
-	CallRag("Когда погиб Алексей Навальный?", 1)
-    elapsed = time.Since(start2)
-    fmt.Printf("Функция RAG заняла %s\n", elapsed)
+
 
     start2 = time.Now()
 	CallSemanticSearch("Пригожин", 5)
-    elapsed = time.Since(start2)
-    fmt.Printf("Функция semantic search заняла %s\n", elapsed)
+    elapsed4 := time.Since(start2)
+    //fmt.Printf("Функция semantic search заняла %s\n", elapsed4)
+
+    start2 = time.Now()
+	CallRag("Когда погиб Алексей Навальный?", 1)
+    elapsed3 := time.Since(start2)
+    //fmt.Printf("Функция RAG заняла %s\n", elapsed3)
     
 
+
+    //TODO: there is error with stop words need to investigate templates and there are need to stop processing with stop-word /nQuestion
+    /*
     start2 = time.Now()
     CallRag("Когда был бунт Пригожина?", 1)
     elapsed = time.Since(start2)
     fmt.Printf("Функция RAG заняла %s\n", elapsed)
-    //CallSemanticSearch
+    */
 
     /*
     start2 = time.Now()
@@ -145,9 +150,13 @@ func main() {
     fmt.Printf("Функция RAG (как закончить войну) занял %s\n", elapsed)
     */
 
+    fmt.Printf("Функция загрузки документов заняла %s\n", elapsed1)
+    fmt.Printf("Функция semantic search 'Навальный' заняла %s\n", elapsed2)
+    fmt.Printf("Функция semantic search 'Пригожин' заняла %s\n", elapsed4)
+    fmt.Printf("Функция RAG заняла %s\n", elapsed3)
 
-    elapsed = time.Since(start)
-    fmt.Printf("Всего времени потрачено %s\n", elapsed)
+    elapsed5 := time.Since(start)
+    fmt.Printf("Всего времени потрачено %s\n", elapsed5)
 
 }
 
