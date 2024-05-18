@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+    "time"
 
 	//"github.com/tmc/langchaingo/embeddings"
 
@@ -91,7 +92,7 @@ func CallSemanticSearch(promt string, max_results int) {
 	log.Println("Semantic Search results:", docs)
 }
 
-func CallRagSearch(promt string, max_results int) {
+func CallRag(promt string, max_results int) {
 	result, err := localai.RagSearch(promt, max_results)
 	if err != nil {
 		log.Println(err)
@@ -100,15 +101,45 @@ func CallRagSearch(promt string, max_results int) {
 }
 
 func main() {
+
+    start := time.Now()
+
 	files := getFiles("../medusa_dump")
 	/* if err != nil {
 		fmt.Println(err)
 	} */
 
+
 	docs := GetDocsShemaByFiles(files)
 	localai.LoadDocsToStore(docs)
+
+    elapsed := time.Since(start)
+    fmt.Printf("Функция загрузки документов заняла %s\n", elapsed)
+
+    start2 := time.Now()
 	CallSemanticSearch("Навальный", 5)
-	CallRagSearch("Когда убили Алексея Навального?", 15)
+    elapsed = time.Since(start2)
+    fmt.Printf("Функция semantic search заняла %s\n", elapsed)
+
+    start2 = time.Now()
+	CallRag("Когда погиб Алексей Навальный?", 3)
+    elapsed = time.Since(start2)
+    fmt.Printf("Функция RAG заняла %s\n", elapsed)
+
+    start2 = time.Now()
+    CallRag("Когда был бунт Пригожина?", 3)
+    elapsed = time.Since(start2)
+    fmt.Printf("Функция RAG заняла %s\n", elapsed)
+    //CallSemanticSearch
+
+    
+    start2 = time.Now()
+    CallRag("Как положить конец войне в Украине?",3)
+    elapsed = time.Since(start2)
+    fmt.Printf("Функция RAG (как закончить войну) занял %s\n", elapsed)
+
+    elapsed = time.Since(start)
+    fmt.Printf("Всего времени потрачено %s\n", elapsed)
 
 }
 
