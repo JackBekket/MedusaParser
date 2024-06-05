@@ -7,12 +7,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-    "time"
+	"time"
 
 	//"github.com/tmc/langchaingo/embeddings"
 
-	localai "github.com/JackBekket/uncensoredgpt_tgbot/lib/embeddings"
+	localai "github.com/JackBekket/hellper/lib/embeddings"
 	"github.com/tmc/langchaingo/schema"
+	"github.com/tmc/langchaingo/vectorstores"
 )
 
 type FileData struct {
@@ -84,16 +85,17 @@ func parseFiles(path string) ([]FileData, error) {
 	return files, nil
 }
 
-func CallSemanticSearch(promt string, max_results int) {
-	docs, err := localai.SemanticSearch(promt, max_results)
+func CallSemanticSearch(promt string, max_results int, store vectorstores.VectorStore) {
+	docs, err := localai.SemanticSearch(promt, max_results,store)
 	if err != nil {
 		log.Println(err)
 	}
 	log.Println("Semantic Search results:", docs)
 }
 
-func CallRag(promt string, max_results int) {
-	result, err := localai.RagSearch(promt, max_results)
+func CallRag(promt string, max_results int, store vectorstores.VectorStore) {
+	api_key := os.Getenv("OPENAI_API_KEY")
+	result, err := localai.Rag(promt, max_results,api_key, store)
 	if err != nil {
 		log.Println(err)
 	}
@@ -109,27 +111,34 @@ func main() {
 		fmt.Println(err)
 	} */
 
+	db_link := os.Getenv("PG_LINK")
+	api_key := os.Getenv("OPENAI_API_KEY")
+
+	store,err := localai.GetVectorStore(api_key,db_link)
+	if err != nil {
+		log.Println(err)
+	}
 
 	docs := GetDocsShemaByFiles(files)
-	localai.LoadDocsToStore(docs)
+	localai.LoadDocsToStore(docs,store)
 
     elapsed1 := time.Since(start)
     fmt.Printf("Функция загрузки документов заняла %s\n", elapsed1)
 
     start2 := time.Now()
-	CallSemanticSearch("Навальный", 5)
+	CallSemanticSearch("Навальный", 5,store)
     elapsed2 := time.Since(start2)
     //fmt.Printf("Функция semantic search заняла %s\n", elapsed2)
 
 
 
     start2 = time.Now()
-	CallSemanticSearch("Пригожин", 5)
+	CallSemanticSearch("Пригожин", 5,store)
     elapsed4 := time.Since(start2)
     //fmt.Printf("Функция semantic search заняла %s\n", elapsed4)
 
     start2 = time.Now()
-	CallRag("Когда погиб Алексей Навальный?", 1)
+	CallRag("Когда погиб Алексей Навальный?", 1,store)
     elapsed3 := time.Since(start2)
     //fmt.Printf("Функция RAG заняла %s\n", elapsed3)
     
