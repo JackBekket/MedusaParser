@@ -116,8 +116,9 @@ func main() {
 
 	db_link := os.Getenv("PG_LINK")
 	api_key := os.Getenv("OPENAI_API_KEY")
+	base_url := os.Getenv("LOCAL_AI")
 
-	store,err := localai.GetVectorStore(api_key,db_link)
+	store,err := localai.GetVectorStore(base_url,api_key,db_link)
 	if err != nil {
 		log.Println(err)
 	}
