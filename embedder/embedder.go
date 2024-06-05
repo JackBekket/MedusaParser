@@ -12,6 +12,7 @@ import (
 	//"github.com/tmc/langchaingo/embeddings"
 
 	localai "github.com/JackBekket/hellper/lib/embeddings"
+	"github.com/joho/godotenv"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/vectorstores"
 )
@@ -103,6 +104,8 @@ func CallRag(promt string, max_results int, store vectorstores.VectorStore) {
 }
 
 func main() {
+
+	_= godotenv.Load()
 
     start := time.Now()
 
