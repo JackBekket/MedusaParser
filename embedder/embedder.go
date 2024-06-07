@@ -95,8 +95,9 @@ func CallSemanticSearch(promt string, max_results int, store vectorstores.Vector
 }
 
 func CallRag(promt string, max_results int, store vectorstores.VectorStore) {
+	base_url := os.Getenv("LOCAL_AI")
 	api_key := os.Getenv("OPENAI_API_KEY")
-	result, err := localai.Rag(promt, max_results,api_key, store)
+	result, err := localai.Rag(base_url,api_key,promt,max_results,store)
 	if err != nil {
 		log.Println(err)
 	}
